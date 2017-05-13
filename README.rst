@@ -99,6 +99,28 @@ e.g.
   An example of such a package is `progressbar2 <https://pypi.python.org/pypi/progressbar2>`_,
   which is called ``progressbar2`` on PyPI, but ``progressbar`` in source code.
 
+``local_stubs_directory``
+  Set this to have ``mystubs`` work from a folder of your choice. Defaults to ``.mystubs``.
+  This is the path where all stubs are generated to, and also where ``mystubs`` will look for
+  your project-local stub overrides (under the ``.local`` directory)
+
+``requirements_paths``
+  If you don't specify your requirement versions in ``requirements.txt``, you can override
+  where ``mystubs`` looks to figure out which modules (and corresponding versions, when 
+  ``module.<module_name>.version == "auto"``) to run against. Expects a list
+
+e.g.
+
+::
+
+    # /path/to/your/project/.mystubs.toml
+
+    requirements_path = ["requirments.txt", "requirements-dev.txt"]
+
+Ordering matters: if ``requirements.txt`` has a different version of a module to 
+``requirements-dev.txt``, then the one in ``requirements-dev.txt`` will win (more
+generally, the files are read in order, with later values overriding earlier ones).
+
 your stubs
 ----------
 
