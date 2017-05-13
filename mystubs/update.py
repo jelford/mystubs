@@ -21,6 +21,7 @@ import re
 import functools
 import sys
 import itertools
+import tempfile
 
 import toml
 import appdirs
@@ -76,10 +77,6 @@ class Mod():
         return config.get('package_name', self.name)
 
     @property
-    def generated_stubs_location(self) -> str:
-        return path.join(self.stub_root_dir, 'out')
-
-    @property
     def target_version(self) -> str:
         print(f'Looking up version for {self.name}')
         version = self.config.get('version', 'auto')
@@ -89,11 +86,11 @@ class Mod():
 
     @property
     def prev_build_record_path(self) -> str:
-        return path.join(self.stub_root_dir, 'build.version')
+        return path.join(config['local_stubs_directory'], '.state', self.name, 'build.version')
 
     @property
     def project_local_stubs_overrides(self) -> str:
-        return path.join(self.stub_root_dir, 'stubs')
+        return path.join(config['local_stubs_directory'], '.local', self.name)
 
     @property
     def user_local_stubs_override_dirs(self) -> List[str]:
@@ -107,11 +104,10 @@ class Mod():
         hasher(mypy_version().encode('utf-8'))
         hasher(self.target_version.encode('utf-8'))
         hash_dir(hasher, self.project_local_stubs_overrides)
-        hash_dir(hasher, self.generated_stubs_location)
-        for artifact in os.listdir(self.generated_stubs_location):
-            art_target = path.join(self.generated_stubs_location, artifact)
+        for artifact in [f'{self.package_name}.pyi', self.package_name]:
+            art_target = path.join(config['local_stubs_directory'], artifact)
             if path.isdir(art_target):
-                hash_dir(hasher, path.join(config['local_stubs_directory'], art_target))
+                hash_dir(hasher, art_target)
             elif path.isfile(art_target):
                 hash_file(hasher, art_target)
 
@@ -126,6 +122,7 @@ def gather_stubgen_jobs(module_name):
     module_spec = find_spec(module_name)
 
     if module_spec is None:
+        print(f"Couldn't find anything to build for {module_name}")
         return
 
     yield module_spec.name
@@ -176,17 +173,14 @@ def ensure_dir(dir_path: str) -> None:
         pass
 
 
-def clear_previous_output(mod):
-    kill(mod.generated_stubs_location)
-    ensure_dir(mod.generated_stubs_location)
-
-
-def generate_stubs(mod) -> None:
-    clear_previous_output(mod)
+def generate_stubs(mod, target_dir) -> None:
     print(f'Building stubs for {mod.name}')
 
-    for p in gather_stubgen_jobs(mod.package_name):
-        subprocess.check_call(['stubgen', p], stdout=subprocess.DEVNULL, stderr=None, cwd=mod.stub_root_dir)
+    with tempfile.TemporaryDirectory() as d:
+        ensure_dir(path.join(d, 'out'))
+        for p in gather_stubgen_jobs(mod.package_name):
+            subprocess.check_call(['stubgen', p], stdout=subprocess.DEVNULL, stderr=None, cwd=d)
+        copy_stubs_into_place(path.join(d, 'out'))
 
 
 _allowed_hashes = {
@@ -255,6 +249,7 @@ def record_build_state(mod: Mod) -> None:
         'hash_algo': 'blake2b',
     }
 
+    ensure_dir(path.dirname(mod.prev_build_record_path))
     with open(mod.prev_build_record_path, 'w') as record:
         mod.config.update(build_record)
         toml.dump(mod.config, record)
@@ -282,10 +277,9 @@ def update_if_required(mod: Mod) -> None:
         print(f'{mod.name} is up to date')
         return
 
-    generate_stubs(mod)
+    generate_stubs(mod, config['local_stubs_directory'])
 
-    for p in itertools.chain([mod.generated_stubs_location],
-                             mod.user_local_stubs_override_dirs,
+    for p in itertools.chain(mod.user_local_stubs_override_dirs,
                              [mod.project_local_stubs_overrides]):
 
         copy_stubs_into_place(p)
