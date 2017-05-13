@@ -56,8 +56,6 @@ def auto_versions():
                     continue
 
                 packages[spec.group(1)] = spec.group(2)
-    for p, v in packages.items():
-        print(f'Autodiscovered versions {p} => {v}')
     return packages
 
 
@@ -74,11 +72,10 @@ class Mod():
 
     @property
     def package_name(self) -> str:
-        return config.get('package_name', self.name)
+        return self.config.get('package_name', self.name)
 
     @property
     def target_version(self) -> str:
-        print(f'Looking up version for {self.name}')
         version = self.config.get('version', 'auto')
         if version == 'auto':
             return auto_version(self.name)
@@ -134,15 +131,10 @@ def gather_stubgen_jobs(module_name):
 
 def gather_modules_to_build() -> Iterator[Mod]:
     local_dir = path.join(config['local_stubs_directory'], '.local')
-    discovered = set()
-    if config['discover_modules']:
-        for mod, version in auto_versions().items():
-            discovered.add(mod)
-            yield Mod(mod, {'version': version}, path.join(local_dir, mod))
+    configured_modules = set()
 
     for mod, details in config['modules'].items():
-        if mod in discovered:
-            continue
+        configured_modules.add(mod)
 
         try:
             skip = details.get('skip', False)
@@ -153,9 +145,14 @@ def gather_modules_to_build() -> Iterator[Mod]:
         if not skip:
             yield(Mod(mod, details, path.join(local_dir, mod)))
 
+    if config['discover_modules']:
+        for mod, version in auto_versions().items():
+            if mod in configured_modules:
+                continue
+            yield Mod(mod, {'version': version}, path.join(local_dir, mod))
+
 
 def kill(kill_path):
-    print(f'Killing {kill_path}')
     if not path.exists(kill_path):
         return
     if path.islink(kill_path):
