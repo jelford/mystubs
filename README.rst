@@ -115,7 +115,7 @@ e.g.
 
     # /path/to/your/project/.mystubs.toml
 
-    requirements_path = ["requirments.txt", "requirements-dev.txt"]
+    requirements_paths = ["requirments.txt", "requirements-dev.txt"]
 
 Ordering matters: if ``requirements.txt`` has a different version of a module to 
 ``requirements-dev.txt``, then the one in ``requirements-dev.txt`` will win (more
