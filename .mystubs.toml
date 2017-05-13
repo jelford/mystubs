@@ -1,1 +1,1 @@
-toml = 'auto'
+discover_modules = true

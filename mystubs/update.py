@@ -2,10 +2,13 @@
 update.py
 
 Usage:
-    update.py [--clean]
+    update.py [--clean] [MODULE]
 
 Options:
     --clean     Remove all previous output
+
+Arguments:
+    MODULE      Only generate or clean MODULE
 """
 from typing import Iterator, Dict, Any, Callable, List
 
@@ -98,9 +101,14 @@ class Mod():
         ]
 
     def hash_current_state(self, hasher: Callable[[bytes], None]) -> None:
+        # inputs
         hasher(mypy_version().encode('utf-8'))
         hasher(self.target_version.encode('utf-8'))
         hash_dir(hasher, self.project_local_stubs_overrides)
+        for d in self.user_local_stubs_override_dirs:
+            hash_dir(hasher, d)
+
+        # outputs
         for artifact in [f'{self.package_name}.pyi', self.package_name]:
             art_target = path.join(config['local_stubs_directory'], artifact)
             if path.isdir(art_target):
@@ -290,19 +298,27 @@ def run() -> None:
 
     args = docopt(__doc__)
     if args['--clean']:
-        clean()
+        clean(args['MODULE'])
         return
 
     for mod in gather_modules_to_build():
-        update_if_required(mod)
+        if mod.name == args['MODULE'] or args['MODULE'] is None:
+            update_if_required(mod)
 
 
-def clean():
+def clean(mod_name=None):
     local_stubs_dir = config['local_stubs_directory']
-    for output in os.listdir(local_stubs_dir):
-        if output == '.local':
-            continue
-        kill(path.join(local_stubs_dir, output))
+    if mod_name is None:
+        things_to_kill = [t for t in os.listdir(local_stubs_dir) if t != '.local']
+    else:
+        mod_python_package = config.get('modules', dict()).get('package_name', None)
+        things_to_kill = [path.join('.state', mod_name)]
+        if mod_python_package is not None:
+            things_to_kill.extend((f'{mod_python_package}.pyi', mod_python_package,))
+
+    things_to_kill = [path.join(local_stubs_dir, t) for t in things_to_kill]
+    for thing in things_to_kill:
+        kill(thing)
 
 
 if __name__ == '__main__':
