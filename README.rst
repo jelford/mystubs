@@ -108,8 +108,8 @@ useful when for some reason that's not possible.
 
 Stubs are generated for each module with using the following strategy:
 
-1. run ``stubgen`` across the module's root package and all its dependencies.
-Outputs are put under ``.mystubs``
+1. run ``stubgen`` across the module's root package and all its dependencies. 
+   Outputs are put under ``.mystubs``
 #. copy over any stubs from a user-local "third_party" typeshed.
 #. copy over any project-local stubs, located under ``.mystubs/.local/<module_name>/``
 
