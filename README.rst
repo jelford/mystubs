@@ -96,7 +96,7 @@ e.g.
 ``modules.<module_name>.package_name``
   tells ``mystubs`` that the name used for this module's root python package
   differs from its name used outside of python code (e.g. in ``requirements.txt``)
-  An example of such a package is `progressbar2 <https://pypi.python.org/pypi/progressbar2>`,
+  An example of such a package is `progressbar2 <https://pypi.python.org/pypi/progressbar2>`_,
   which is called ``progressbar2`` on PyPI, but ``progressbar`` in source code.
 
 your stubs
