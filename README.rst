@@ -171,7 +171,7 @@ up seeing for your project.
 
 License
 =======
-Apache License 2: see LICENSE
+Apache License 2: see `LICENSE <blob/master/LICENSE>`_
 
 Contributing
 ============
