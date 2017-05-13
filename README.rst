@@ -43,6 +43,8 @@ For a simple project, this will be enough; you can now run:
 
 All that remains is to let ``mypy`` know about your local stubs folder:
 
+::
+
     set -x MYPYPATH .mystubs
 
 Get commandline options with ``--help``:
