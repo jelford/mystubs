@@ -124,7 +124,7 @@ generally, the files are read in order, with later values overriding earlier one
 your stubs
 ----------
 
-The ideal outcome if for type annotations to be added directly to a project,
+The ideal outcome is for type annotations to be added directly to a project,
 or failing that, contributed upstream to the ``typeshed``. ``mystubs`` is
 useful when for some reason that's not possible.
 
