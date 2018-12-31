@@ -14,7 +14,7 @@ from typing import Iterator, Dict, Any, Callable, List
 
 import os
 from os import path
-
+import json
 import pkgutil
 import subprocess
 import shutil
@@ -48,10 +48,12 @@ def mypy_version():
 
 
 @functools.lru_cache()
-def auto_versions():
+def auto_versions_from_requirements_file():
     requirements_files = config.get('requirements_paths', ['requirements.txt'])
     packages: Dict[str, str] = dict()
     for r_path in requirements_files:
+        if not path.exists(r_path):
+            continue
         with open(r_path, 'r', encoding='utf-8') as f:
             for line in f:
                 spec = _REQUIREMENT_SPEC.match(line)
@@ -60,6 +62,30 @@ def auto_versions():
 
                 packages[spec.group(1)] = spec.group(2)
     return packages
+
+
+@functools.lru_cache()
+def auto_versions_from_pipfile():
+    if not path.exists('Pipfile.lock'): 
+        return {}
+
+    with open('Pipfile.lock', 'rb') as pfile:
+        pipfile_requirements = json.load(pfile)['default']
+
+    for rname, rspec in pipfile_requirements.items():
+        if not 'version' in rspec:
+            print(rname, rspec)
+    return {
+        rname: rspec["version"] for rname, rspec in pipfile_requirements.items() 
+        if 'version' in rspec
+    }
+
+
+@functools.lru_cache()
+def auto_versions():
+    r = auto_versions_from_requirements_file()
+    r.update(auto_versions_from_pipfile())
+    return r
 
 
 @functools.lru_cache()
