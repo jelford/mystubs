@@ -1,4 +1,0 @@
-toml==0.9.2
-mypy==0.511
-appdirs==1.4.3
-docopt==0.6.2

@@ -1,7 +1,14 @@
 from setuptools import setup, find_packages
-from pip.req import parse_requirements
+import json
 
-install_requires = [f'{ir.req}' for ir in parse_requirements('requirements.txt', session='hack')]
+
+def load_requirements():
+    with open('Pipfile.lock', 'rb') as lockfile:
+        lock_data = json.load(lockfile)
+    return [
+        f'{rname}{rspec["version"]}' for rname, rspec in lock_data['default'].items()
+        if 'editable' not in rspec
+    ]
 
 setup(
         name='mystubs',
@@ -10,7 +17,12 @@ setup(
         author='James Elford',
         author_email='james.p.elford@gmail.com',
         license='BSD 3-clause',
-        install_requires=install_requires,
+        install_requires=[
+            'toml~=0.9.2',
+            'mypy>=0.650',
+            'appdirs~=1.4.3',
+            'docopt~=0.6.2'
+        ],
         packages=find_packages(),
         entry_points={
             'console_scripts': [
